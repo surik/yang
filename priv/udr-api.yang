@@ -1,0 +1,263 @@
+module udr-api {
+    namespace "http://travelping.com/ns/udr";
+    prefix "udr";
+    import "priv/tposs-api-types" {
+        prefix "tapi";
+    }
+
+    typedef Status {
+         type enumeration {
+            enum ok;
+            enum error;
+        }
+    }
+
+    typedef ObjectFields {
+        type enumeration {
+            enum Object-Id;
+            /*
+             * a implementation of this API will augment this enumeration with
+             * additional fields
+             */
+        }
+    }
+
+    typedef Private-User-Id {
+        type string;
+    }
+    typedef Subscriber-Id {
+        type string;
+    }
+    typedef Charging-Account-Id {
+        type string;
+    }
+    typedef Public-User-Id {
+        type string;
+    }
+    typedef Service-Profile-Id {
+        type string;
+    }
+    grouping Credential {
+        leaf Authentication-Scheme {
+            description "The credential's authentication scheme";
+            type string;
+        }
+        leaf Authentication-Id {
+            description "Authentication Identifier";
+            type string;
+        }
+        leaf Authentication-Data {
+            description "Piece of JSON data used for authentication, e.g. the password";
+            type string;
+        }
+/*
+            leaf Private-User-Id {
+                description "Private user identity the credential is associated with";
+                type string;
+            }
+*/
+    }
+    grouping Service-Profile-Parameter {
+        /* TODO */
+    }
+
+    grouping Overlay-Service-Profile {
+        leaf Service-Profile-Id {
+            type Service-Profile-Id;
+            mandatory true;
+        }
+        list Override {
+            uses Service-Profile-Parameter;
+        }
+        list Append {
+            uses Service-Profile-Parameter;
+        }
+    }
+
+    list server {
+        key "name";
+        unique "ip port";
+        leaf name {
+            type string;
+        }
+        leaf ip {
+            type string;
+        }
+        leaf port {
+            type string;
+        }
+    }
+
+    grouping UserObject {
+        leaf Private-User-Id {
+            type Private-User-Id;
+            mandatory true;
+        }
+        leaf Subscriber-Id {
+            type Subscriber-Id;
+            mandatory true;
+        }
+        leaf Charging-Account {
+            type Charging-Account-Id;
+            mandatory true;
+        }
+        leaf-list Public-User-Ids {
+            type Public-User-Id;
+            mandatory true;
+        }
+        list Credentials {
+            uses Credential;
+            mandatory true;
+        }
+        list Overlay-Service-Profiles {
+            uses Overlay-Service-Profile;
+            mandatory true;
+        }
+    }
+
+    typedef FilterObject {
+        type binary; // todo
+    }
+ 
+    rpc Create {
+        description "Create a user object identified by the given Private-User-Id.";
+        input {
+            uses tapi:FEID;
+            uses UserObject;
+        }
+        output {
+            uses tapi:result {
+                augment result/ok/Data/Items/Result {
+                    uses UserObject;
+                }
+            }
+        }
+    }
+
+    rpc Bulk-Create {
+        description "Create multiple user objects identified by the given Private-User-Ids.";
+        input {
+            uses tapi:FEID;
+            leaf Users {
+                key "Private-User-Id";
+                description "List of User Objects";
+                uses UserObject;
+            }
+        }
+        output {
+            uses tapi:result {
+                augment result/ok/Data/Items/Result {
+                    leaf Total-Count {
+                        type int64;
+                        description "The total number of Object objects";
+                    }
+                    leaf Failure-Count {
+                        type int64;
+                        description "The total number of failed operations";
+                    }
+                    list Items {
+                        description "List of Object objects";
+                        uses tapi:result {
+                            augment result/ok/Data/Items/Result {
+                                uses UserObject;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+  
+    rpc Read {
+        input {
+            uses tapi:FEID;
+            leaf Private-User-Id {
+                type Private-User-Id;
+                mandatory true;
+            }
+            leaf-list Fields {
+                type ObjectFields;
+                description "Object object fields to be read. If unspecified, all fields are returned.";
+                mandatory true;
+            }
+        }
+        output {
+            uses tapi:result {
+                augment result/ok/Data/Items/Result {
+                    uses UserObject;
+                }
+            }
+        }
+    }
+    
+    rpc Update {
+        input {
+            uses tapi:FEID;
+            uses UserObject;
+        }
+        output {
+            uses tapi:result {
+                augment result/ok/Data/Items/Result {
+                    uses UserObject;
+                }
+            }
+        }
+    }
+    
+    rpc Delete {
+        input {
+            uses tapi:FEID;
+            leaf Private-User-Id {
+                type Private-User-Id;
+                mandatory true;
+            }
+        }
+        output {
+            uses tapi:result {
+                refine result/ok/Data/Boolean/Ok {
+                    default true;
+                }
+            }
+        }
+    }
+    
+    rpc List {
+        input {
+            uses tapi:FEID;
+            leaf Offset {
+                type uint64;
+                description "Zero-based offset from the start of the list.";
+            }
+            leaf Limit {
+                type uint64;
+                description "The number of objects returned.";
+            }
+            leaf Filter {
+                when "./Fields = 'null'";
+                type FilterObject;
+                description "Pre-filter objects by Object-Id prefix.";
+            }
+            leaf-list Fields {
+                type ObjectFields;
+                description "Object object fields to be read. If unspecified, all fields are returned.";
+            }
+        }
+        output {
+            uses tapi:result {
+                augment result/ok/Data/Items/Result {
+                    list Items {
+                        uses UserObject;
+                        description "List of Object objects";
+                    }
+                    leaf Total-Count {
+                        type int64;
+                        description "The total number of Object objects";
+                    }
+                }
+                refine result/ok/Data/Boolean/Ok {
+                    default true;
+                }
+            }
+        }
+    }
+}

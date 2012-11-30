@@ -1,0 +1,230 @@
+module crud-api-skeleton {
+    namespace "http://travelping.com/ns/skeleton/object";
+    prefix "skel";
+
+    typedef Status {
+         type enumeration {
+            enum ok;
+            enum error;
+        }
+    }
+       
+    typedef ObjectFields {
+        type enumeration {
+            enum Object-Id;
+            /*
+             * a implementation of this API will augment this enumeration with
+             * additional fields
+             */
+        }
+    }
+
+    grouping rpc_error {
+        leaf code {
+            type int16;
+        }
+        leaf message {
+            type string;
+        }
+    }
+    
+    grouping result {
+        leaf Status {
+            description "Result of this operation";
+            type Status;
+        }
+        choice result {
+            case error {
+                when "Status == error";
+                uses rpc_error;
+            }
+            case ok {
+                when "Status == ok";
+                choice Data {
+                    case Boolean {
+                        leaf Ok {
+                            type boolean;
+                        }
+                    }
+                    case Items {
+                        container Result;
+                    }
+                }
+            }
+        }
+    }
+
+    typedef FilterObject {
+        type binary; // todo
+    }
+    
+    grouping object {
+        description "Skeleton Object";
+
+        leaf Object-Id {
+            description "The Object Id";
+            type string;
+        }
+        /*
+         * a implementation of this API will augment this group with
+         * additional fields
+         */
+    }
+    
+    rpc Create {
+        input {
+            leaf FEID {
+                description "Front End Identifier";
+                type string;
+            }
+            uses object;
+        }
+        output {
+            uses result {
+                augment result/ok/Data/Items/Result {
+                    uses object;
+                }
+            }
+        }
+    }
+
+    rpc Bulk-Create {
+        input {
+            leaf FEID {
+                description "Front End Identifier";
+                type string;
+            }
+            list Objects {
+                key "Object-Id";
+                description "List of Objects";
+
+                uses object;
+            }
+        }
+        output {
+            uses result {
+                augment result/ok/Data/Items/Result {
+                    leaf Total-Count {
+                        type int64;
+                        description "The total number of Object objects";
+                    }
+                    leaf Failure-Count {
+                        type int64;
+                        description "The total number of failed operations";
+                    }
+                    list Items {
+                        description "List of Object objects";
+                        uses result {
+                            augment result/ok/Data/Items/Result {
+                                uses object;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+  
+    rpc Read {
+        input {
+            leaf FEID {
+                description "Front End Identifier";
+                type string;
+            }
+            leaf Object-Id {
+                description "The object id";
+                type string;
+            }
+            leaf-list Fields {
+                type ObjectFields;
+                description "Object object fields to be read. If unspecified, all fields are returned.";
+            }
+        }
+        output {
+            uses result {
+                augment result/ok/Data/Items/Result {
+                    uses object;
+                }
+            }
+        }
+    }
+    
+    rpc Update {
+        input {
+            leaf FEID {
+                description "Front End Identifier";
+                type string;
+            }
+            uses object;
+        }
+        output {
+            uses result {
+                augment result/ok/Data/Items/Result {
+                    uses object;
+                }
+            }
+        }
+    }
+    
+    rpc Delete {
+        input {
+            leaf FEID {
+                description "Front End Identifier";
+                type string;
+            }
+            leaf Object-Id {
+                description "The object id";
+                type string;
+            }
+        }
+        output {
+            uses result {
+                refine result/ok/Data/Boolean/Ok {
+                    default true;
+                }
+            }
+        }
+    }
+    
+    rpc List {
+        input {
+            leaf FEID {
+                description "Front End Identifier";
+                type string;
+            }
+            leaf Offset {
+                type uint64;
+                description "Zero-based offset from the start of the list.";
+            }
+            leaf Limit {
+                type uint64;
+                description "The number of objects returned.";
+            }
+            leaf Filter {
+                type FilterObject;
+                description "Pre-filter objects by Object-Id prefix.";
+            }
+            leaf-list Fields {
+                type ObjectFields;
+                description "Object object fields to be read. If unspecified, all fields are returned.";
+            }
+        }
+        output {
+            uses result {
+                augment result/ok/Data/Items/Result {
+                    list Items {
+                        uses object;
+                        description "List of Object objects";
+                    }
+                    leaf Total-Count {
+                        type int64;
+                        description "The total number of Object objects";
+                    }
+                }
+                refine result/ok/Data/Boolean/Ok {
+                    default true;
+                }
+            }
+        }
+    }
+}

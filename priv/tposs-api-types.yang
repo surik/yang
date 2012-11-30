@@ -1,0 +1,58 @@
+module tposs-api-types {
+    namespace "http://travelping.com/ns/tposs/types";
+    prefix "tt";
+
+    typedef Status {
+         type enumeration {
+            enum ok;
+            enum error;
+        }
+    }
+       
+    grouping FEID {
+        leaf FEID {
+            description "Front End Identifier";
+            type string;
+            mandatory true;
+        }
+    }
+
+    grouping rpc_error {
+        leaf code {
+            type int16;
+        }
+        leaf message {
+            type string;
+        }
+    }
+    
+    grouping result {
+        leaf Status {
+            description "Result of this operation";
+            type Status;
+        }
+        choice result {
+            case error {
+                when "Status = 'error'";
+                uses rpc_error;
+            }
+            case ok {
+                when "Status = 'ok'";
+                choice Data {
+                    case Boolean {
+                        leaf Ok {
+                            type boolean;
+                        }
+                    }
+                    case Items {
+                        container Result;
+                    }
+                }
+            }
+        }
+    }
+
+    typedef FilterObject {
+        type binary; // todo
+    }
+}
