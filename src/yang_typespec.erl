@@ -41,7 +41,7 @@ rpc_params(RPC, Ms = {_Module, TypeSpec}) ->
 	#rpc{input = Input} ->
 	    [element(2, X) || X <- Input#object.fields];
 	_ ->
-	    error({badarg, [RPC, Ms]})
+	    error({badarg, [rpc_params, RPC, Ms]})
     end.
 
 get_type({_Module, TypeSpec}, Type)

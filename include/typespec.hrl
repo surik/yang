@@ -1,4 +1,4 @@
--record(field, {name, description, type, 'when', default = null, mandatory = false, opts}).
+-record(field, {name, description, type, 'when', default, mandatory = false, opts}).
 -record(typedef, {name, description, type, default, opts}).
 -record(struct, {fields, opts}).
 -record(object, {name, description, fields, 'when', opts}).
