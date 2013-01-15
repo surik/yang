@@ -57,7 +57,9 @@ hrl(Path, Ms = {Module, _}) ->
     file:write_file(F, hrl(Ms)).
 
 hrl(Ms) ->
-    io_lib:format("typespec() -> ~n~s.~n", [pretty_print(Ms)]).
+    groupings_as_records(Ms),
+    io_lib:format("typespec() -> ~n~s.~n", [pretty_print(Ms)]) ++
+	"\n" ++ groupings_as_records(Ms).
 
 pretty_print(ModuleSpec) ->
     io_lib_pretty:print(ModuleSpec, fun record_definition/2).
@@ -67,6 +69,11 @@ pretty_print({Module, TypeSpec}, Filter) ->
 
 pretty_print_rpc(ModuleSpec) ->
     pretty_print(ModuleSpec, fun(T) -> [X || X = #rpc{} <- T] end).
+
+groupings_as_records({_Module, TypeSpec}) ->
+    Records = [object_to_record(Obj) || Obj = #object{} <- TypeSpec],
+    %% RecInfos = string:join([object_to_recordinfo(Obj) || Obj = #object{} <- TypeSpec], ";\n") ++ ".\n",
+    Records.
 
 %% --------------------------------------------------------------------------------
 %% -- internal functions
@@ -84,6 +91,16 @@ pretty_print_rpc(ModuleSpec) ->
 ?RD('case');
 record_definition(_, _) -> no.
 
+object_to_record(Obj) ->
+    Fields = string:join([io_lib:format("\t'~s'", [element(2, Field)]) || Field <- Obj#object.fields], ",\n"),
+    io_lib:format("-record('~s', {~n~s~n}).~n", [Obj#object.name, Fields]).
+
+%% object_to_recordinfo(Obj) ->
+%%     {Fields0, _} = lists:mapfoldl(fun(Field, Cnt) ->
+%% 					  {io_lib:format("{<<\"~s\">>, ~w}", [Field#field.name, Cnt]), Cnt + 1}
+%% 				  end, 2, Obj#object.fields),
+%%     Fields1 = string:join(Fields0, ",\n\t "),
+%%     io_lib:format("recordinfo('~s') ->~n\t[~s]", [Obj#object.name, Fields1]).
 
 rpcfind(input, #rpc{input = Input}) ->
     Input;
