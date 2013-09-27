@@ -146,6 +146,9 @@ validate_item(N, V, _, Type = {<<"timestamp">>, _})
 	error   -> invalid_item(N, V, Type)
     end;
 
+validate_item(_N, V, _, _Type = {<<"any">>, _}) ->
+    V;
+
 validate_item(N, V, _, Type) ->
     invalid_item(N, V, Type).
 

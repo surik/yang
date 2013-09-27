@@ -1,4 +1,5 @@
 {
   "project_id" : "yang",
   "conduit_uri" : "https://review.tpip.net/"
+  "history.immutable" : true
 }
