@@ -70,7 +70,7 @@ validate_item(_, false, _, #field{mandatory = false, default = undefined}) ->
     undefined;
 validate_item(_, false, _, #field{mandatory = false, name = N, default = Default}) ->
     {N, Default};
-validate_item(_, false, _, #array{mandatory = false, name = N}) ->
+validate_item(_, false, _, #array{mandatory = false, name = _N}) ->
     undefined;
 validate_item(N, false, _, _) ->
     throw({error, missing_field, N});
